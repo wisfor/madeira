@@ -2,8 +2,8 @@
 #include <stddef.h>
 //#include <elf64.h>
 
-//extern void setup_longmode();
-//extern void load_kernel(void* entry, uint32_t multiboot_info);
+extern void setup_longmode();
+extern void load_kernel(void* entry, uint32_t multiboot_info);
 
 /*
 char* kernel_elf_space[sizeof(elf_file_data_t)];
@@ -33,13 +33,18 @@ void lmain(const void* multiboot_struct)
 
 	void *kentry = NULL;
 
+	multiboot_module_t* module;
+
+	const char* kernel_bin_string = "KERNEL_BIN";
+
 	/* check modules */
 	if (mb_flags & MULTIBOOT_INFO_MODS) {
 		multiboot_uint32_t mods_count = mb_info->mods_count;
 		multiboot_uint32_t mods_addr = mb_info->mods_addr;
 
 		for (uint32_t mod = 0; mod < mods_count; mod++) {
-			multiboot_module_t* module = (multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
+			multiboot_module_t* module_tmp = (multiboot_module_t*)(mods_addr + (mod * sizeof(multiboot_module_t)));
+			module = module_tmp;
 		}
 		const char* module_string = (const char*)module->cmdline;
 	
@@ -48,8 +53,6 @@ void lmain(const void* multiboot_struct)
 		}
 	}
 
-	
-
-	//setup_longmode();
-	//load_kernel(kentry, (uint32_t)mb_info);
+	setup_longmode();
+	load_kernel(kentry, (uint32_t)mb_info);
 }
