@@ -1,3 +1,6 @@
+*.o
+*.bin
+*.hdd
 *.iso
 isodir
 sysroot
