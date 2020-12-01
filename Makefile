@@ -1,24 +1,33 @@
-X86-GCC			:= i386-elf-gcc
-X86-LD			:= i386-elf-gcc
+TARGET		:= X86_64
+HEADERS		:= sysroot/usr/include
 
-X86_64-GCC		:= x86_64-elf-gcc
-X86_64-LD		:= x86_64-elf-gcc
+X64OBJS :=	kernel/kernel.o
 
-TARGET			:= X86_64
-HEADERS			:= sysroot/usr/include
+ifeq ($TARGET, "X86_64")
+ GCC := x86_64-elf-gcc
+ LD  := x86_64-elf-gcc
+ CFLAGS := -m64 -ffreestanding -z max-page-size=0x1000 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -std=gnu99 -O2 -Wall -Wextra -I $(HEADERS)
+ LDFLAGS := -ffreestanding -nostdlib -lgcc -O2
+ LDFILE := x86_64-linker.ld
+ ARCH_OBJS := kernel/boot/arch/x86_64/boot.o \
+ 		kernel/boot/arch/x86_64/loader.o
+else # FIXME: this is utterly retarded
+ GCC := i686-elf-gcc
+ LD  := i686-elf-gcc
+ CFLAGS := -ffreestanding -std=gnu99 -O2 -g -Wall -Wextra -I $(HEADERS)
+ LDFLAGS := 
+ LDFILE := i386-linker.ld
+ ARCH_OBJS := kernel/boot/arch/i386/boot.o \
+ 		kernel/boot/arch/i386/loader.o
+endif
 
-X86-CFLAGS		:= 
-X86_64-CFLAGS	:= -m64 -ffreestanding -z max-page-size=0x1000 -mno-red-zone -mno-mmx -mno-sse -mno-sse2 -std=gnu99 -O2 -Wall -Wextra -I $(HEADERS)
+%.o: %.asm
+	$(AS) -c $< -o $@
 
-X86-LDFLAGS		:= 
-X86_64-LDFLAGS	:= -ffreestanding -nostdlib -lgcc -O2
+%.o: %.c
+	$(GCC) $(CFLAGS) -c $< -o $@
 
-SUBDIRS := kernel/boot/arch/x86_64/ \
-			#kernel/boot/arch/i386 \
+kernel: $(OBJS) $(ARCH_OBJS)
+	$(LD) $(LDFLAGS) -T $(LDFILE) -o kernel.bin
 
-$(SUBDIRS):
-	$(MAKE) -C $@
-
-loader: $(SUBDIRS)
-
-.PHONY: all
+.PHONY: $(OBJS) $(ARCH_OBJS) kernel
